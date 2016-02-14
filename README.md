@@ -51,6 +51,15 @@ made in order for the file to still be able to decrypt (i.e. a full copy of
 the original file must be available to hash), and such changes should be 
 easily detectable to anyone inspecting this code.
 
+
+## Installation
+Save pylocker.py to your computer
+
+## Instructions for usage
+Run pylocker.py. You will get a menu in the command line. It will hopefully be self-explanatory.
+
+## License
+
 This file is Copyright (C) 2013 Kjetil Wormnes:
 
 Permission is hereby granted, free of charge, to any person obtaining a
