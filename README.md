@@ -34,6 +34,7 @@ Descriptionof encryption/decryption scheme:
 Data is stored in this file between the BEGIN ENCRYPTED BLOCK and END
 DECRYPTED BLOCK markers. 
 Each block has a number (in plaintext):
+
 1. Block 0 contains a random string, encrypted.
 2. A SHA2 hash of this string prepended to the text in this file is xor'ed with
    the SHA2 hash of the user password in order to obtain the key used to decrypt
