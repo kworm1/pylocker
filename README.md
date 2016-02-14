@@ -3,7 +3,7 @@ Single python file password locker.
 
 Created on Tue Dec 31 15:59:17 2013
 
-* Author: Kjetil Wormnes *
+**Author: Kjetil Wormnes**
 
 
 This script is a standalone password locker encrypted using AES. It came about
