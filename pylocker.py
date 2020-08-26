@@ -1134,7 +1134,7 @@ class UI_Txt:
             #
             # Skip all items not in the current page
             #
-            if ((k - 1)/10 + 1 ) != page:
+            if ((k - 1)//10 + 1 ) != page:
                 continue
  
             vals = self.app.get_vals(k)
@@ -1203,7 +1203,7 @@ class UI_Txt:
         
         pageno = 1
         while (True):
-            self.pages = (len(self.app.data) - 1)/10 + 1
+            self.pages = (len(self.app.data) - 1)//10 + 1
             assert(self.pages > 0)
             self.display_data(pageno)
             self.reset_timeout()
@@ -1342,7 +1342,7 @@ if __name__ == '__main__':
     # Start User Interface application
     # 
     app = UI_Txt(
-        timeout     = DefConfig.TIMEOUT,
+        timeout     = None,#DefConfig.TIMEOUT,
         fw_total    = DefConfig.FIELDW_TOTAL,
         fw_id       = DefConfig.FIELDW_ID,
         fw_desc     = DefConfig.FIELDW_DESC,
@@ -1352,5 +1352,10 @@ if __name__ == '__main__':
 
 """
     BEGIN ENCRYPTED BLOCKS
+    000000 UNLOCKED
+    000001 wXIVtDYdHdEEXjTYgsjTfTqUWTHy0lqrcr4TBxE66GQ=
+    000002 YnqnUDnKQ02yntsli7RptefD9F7QLd0E4Ev3q95+YjM=
+    000003 l/nNDZI4PZNT/vehCJhMMarrR1IrLFBxh7yRP6MGxro=
+    000004 HM6ivaNCgBYYtoE76kOBOk6KUxxMFHrToe7EBhAOVFM=
     END ENCRYPTED BLOCKS
 """
