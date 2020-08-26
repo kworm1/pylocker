@@ -137,7 +137,7 @@ def num2matrix(text):
         if i % 4 == 0:
             matrix.append([byte])
         else:
-            matrix[i / 4].append(byte)
+            matrix[i // 4].append(byte)
     return matrix    
 
 
@@ -314,7 +314,7 @@ class AES128:
             if i % 4 == 0:
                 byte = self.round_keys[i - 4][0]        \
                      ^ self.Sbox[self.round_keys[i - 1][1]]  \
-                     ^ self.Rcon[i / 4]
+                     ^ self.Rcon[i // 4]
                 self.round_keys[i].append(byte)
 
                 for j in range(1, 4):
@@ -369,7 +369,7 @@ class AES128:
 class CBC:
     """
         This class implements Cipher-Block-Chaining in order to encrypt or
-        decrypt text of arbitrary length. It's main inut is any 128 bit block
+        decrypt text of arbitrary length. It's main input is any 128 bit block
         cipher 
     """
     def __init__(self, ciph):
@@ -392,7 +392,7 @@ class CBC:
         if iv==None:
             IV = [random.getrandbits(8) for i in range(0,16)]
         else:
-            if type(iv) == long:
+            if type(iv) == int:
                 iv = num2matrix(iv)
                 iv = iv[0] + iv[1] + iv[2] + iv[3]
             IV = iv
@@ -416,12 +416,13 @@ class CBC:
     # it is assumed that the firt 128 bits of the ciphertext will be the IV.
     #
     def decrypt(self, ciphertext0, iv=None):
+
         ciphertext = []
         if iv==None:
             IV = ciphertext0[0:16]
             ciphertext = ciphertext0[16::]
         else:
-            if type(iv) == long:
+            if type(iv) == int:
                 iv = num2matrix(iv)
                 iv = iv[0] + iv[1] + iv[2] + iv[3]
             
@@ -470,13 +471,14 @@ class CBC:
         #
         # Encrypt
         #
-        enc = self.encrypt(dec, iv)
+        enc = bytes(self.encrypt(dec, iv))
         
         #
         # Encode binary output in base64
         #
-        ciphertxt = base64.b64encode(''.join([chr(x) for x in enc]))
-    
+        #ciphertxt = base64.b64encode(''.join([chr(x) for x in enc]).encode())
+        ciphertxt = base64.b64encode(enc)
+
         return ciphertxt    
    
    
@@ -494,7 +496,10 @@ class CBC:
         # Recover byte array, and convert to ascii values
         #
         enc0 = base64.b64decode(ciphertext)
-        enc = [ord(i) for i in enc0]
+        enc  = [int(i) for i in enc0]
+        #print ('BLAH', enc0)
+        #enc = [i for i in enc0]
+        #print('BLAHBLAH',enc)
         
         #
         # Decrypt
@@ -564,7 +569,7 @@ class App():
         #
         # sort indices
         #
-        self.sort_idx = range(1, len(self.data))
+        self.sort_idx = list(range(1, len(self.data)))
 
     def get_vals(self, itemno):
         assert(itemno > 0)
@@ -573,7 +578,7 @@ class App():
             return False
 
         itemno2 = self.sort_idx[itemno - 1]
-        if itemno2 in self.data.keys():
+        if itemno2 in list(self.data.keys()):
             vals = self.cipher.strdecrypt(self.data[itemno2])
             vals = vals.split(self.separator)
             return vals
@@ -583,7 +588,7 @@ class App():
     def set_vals(self, itemno, desc, uname, paswd):
         assert (itemno > 0 and itemno <= len(self.sort_idx))
         itemno2 = self.sort_idx[itemno - 1]
-        if itemno2 in self.data.keys():
+        if itemno2 in list(self.data.keys()):
             self.data[itemno2] = self.cipher.strencrypt(desc + self.separator + uname + self.separator + paswd)
             self.save_data()
             return True
@@ -610,7 +615,7 @@ class App():
         elif col == 'pwd':
             cN = 2
         elif col == 'orig':
-            self.sort_idx = range(1,len(self.data))
+            self.sort_idx = list(range(1,len(self.data)))
             return
         else:
             return     
@@ -624,7 +629,7 @@ class App():
             vals = self.get_vals(i)
             sort_vals.append(vals[cN].lower())
 
-        self.sort_idx = sorted(range(1, len(sort_vals)+1), key=lambda k: sort_vals[k - 1])
+        self.sort_idx = sorted(list(range(1, len(sort_vals)+1)), key=lambda k: sort_vals[k - 1])
         
        
 
@@ -643,7 +648,7 @@ class App():
             me = __file__
             
         m = hashlib.sha256()
-        m.update(init)
+        m.update(init.encode())
         
         #
         # For now ignore encrypted blockss
@@ -653,9 +658,9 @@ class App():
         
         with open(me, 'rb') as f:
             for line in f:
-                if line.strip().find('BEGIN ENCRYPTED BLOCKS') == 0:
+                if line.strip().find(b'BEGIN ENCRYPTED BLOCKS') == 0:
                     encblock = True
-                elif line.strip().find('BEGIN ENCRYPTED BLOCKS') == 0:
+                elif line.strip().find(b'BEGIN ENCRYPTED BLOCKS') == 0:
                     encblock = False
                 
                 if not encblock:
@@ -717,7 +722,7 @@ class App():
             # revert
             #
             self.locked = False
-            self.data[0] = 'UNLOCKED'
+            self.data[0] = b'UNLOCKED'
             
             return False
         else:
@@ -729,7 +734,7 @@ class App():
             #                    
             # reencrypt everything with locked cipher
             #
-            for k,v in self.data.items():
+            for k,v in list(self.data.items()):
                 if (k == 0):
                     continue
                 
@@ -738,7 +743,7 @@ class App():
             #
             # Then save
             #
-            self.save_data()
+            self.save_data(fname='test.txt')
             
             return True
         
@@ -747,12 +752,12 @@ class App():
             Function to unlock the file. When the file is unlocked, Decryption
             depends only on the password. This script can be changed.
         """
-        self.data[0] = 'UNLOCKED'
+        self.data[0] = b'UNLOCKED'
             
         #                    
         # reencrypt everything with raw cipher
         #
-        for k,v in self.data.items():
+        for k,v in list(self.data.items()):
             if (k == 0):
                 continue
             
@@ -787,7 +792,7 @@ class App():
         # First check block 0 - if UNLOCKED we won't try to check for
         # file changes
         #
-        if not self.data[0] == 'UNLOCKED':
+        if not self.data[0] == b'UNLOCKED':
             c = self.raw_cipher.strdecrypt(self.data[0]).split(self.separator)
             
             if len(c) != 2:
@@ -827,7 +832,7 @@ class App():
         # 
         self.locked = True
         if len(self.data) != 0 and not newlock:
-            if self.data[0] == 'UNLOCKED':
+            if self.data[0] == b'UNLOCKED':
                 self.locked = False
             else:
                 rand_str = self.raw_cipher.strdecrypt(self.data[0]).split(self.separator)[0]
@@ -852,8 +857,8 @@ class App():
 
         item_no2 = self.sort_idx[item_no - 1]
         
-        if item_no2 in self.data.keys():
-            for k,v in self.data.items():
+        if item_no2 in list(self.data.keys()):
+            for k,v in list(self.data.items()):
                 if k > item_no2:
                     self.data[k-1] = v
                 
@@ -944,13 +949,14 @@ class App():
             data = self.data
         
         #
-        # to test, use another file
+        # to test, use another file (DOES NOT WORK)
         #
-        if fname != None:
-            me = os.path.dirname(__file__) + '/test.txt'
-        else:
-            me = __file__
-        
+        # if fname != None:
+        #     me = os.path.dirname(__file__) + '/test.txt'
+        # else:
+        #     me = __file__
+        me = __file__
+
         startblock = ''
         endblock = ''
         curblock = 0;
@@ -977,15 +983,16 @@ class App():
                     endblock += line
                 
         
-        with open(me, 'w') as f:
+        with open('test.txt', 'w') as f: ##BLAH
             f.write(startblock)
             f.write('    BEGIN ENCRYPTED BLOCKS\n')
             
             for i in range(0, len(data)):
-                d  = data[i][0:LINLEN]
+
+                d  = data[i][0:LINLEN].decode()
                 for k in range(LINLEN,len(data[i]))[0::LINLEN]:
-                    d += '\n'+(' '*11) + data[i][k:k+LINLEN]
-                
+                    d += '\n'+(' '*11) + data[i][k:k+LINLEN].decode()
+
                 f.write(' '*4 + '%06d '%(i) + d + '\n')
             
             f.write(endblock)
@@ -1061,7 +1068,7 @@ class UI_Txt:
         # by taking the sha256 hash, and discarding every second nibble
         #
         print("Password locker version 0.1")
-        pwd = getpass.getpass("Enter master password:")
+        pwd = getpass.getpass("Enter master password:").encode()
 
 
 
@@ -1080,7 +1087,7 @@ class UI_Txt:
             print('It looks like the password may be incorrect')
 
         if verify > 0:
-            x = raw_input("Ignore and try to decrypt anyway ? y/[n]")
+            x = input("Ignore and try to decrypt anyway ? y/[n]")
             if x != 'y':
                 sys.exit(1)
         
@@ -1107,11 +1114,11 @@ class UI_Txt:
         # Print header
         #
         self.clear()
-        print( ('%'+str(self.fw_id)+'s %-'+str(self.fw_desc + self.fw_space)+'s%-'+str(self.fw_uname + self.fw_space)+'s%-'+str(self.fw_passw)+'s')%('ID', 'Description', 'Username', 'Password'))
+        print(( ('%'+str(self.fw_id)+'s %-'+str(self.fw_desc + self.fw_space)+'s%-'+str(self.fw_uname + self.fw_space)+'s%-'+str(self.fw_passw)+'s')%('ID', 'Description', 'Username', 'Password')))
 
         lockstr = ' - UNLOCKED' if not self.app.locked else ' - locked'
         
-        print('-'*self.fw_total)
+        print(('-'*self.fw_total))
         
         pagestr = ' page %d / %d'%(page, self.pages) + lockstr
         id_no = 0
@@ -1161,7 +1168,7 @@ class UI_Txt:
             v1 = vals[1][0:self.fw_uname]
             v2 = vals[2][0:self.fw_passw]
             
-            print(('%1s%'+str(self.fw_id)+'s %-'+str(self.fw_desc+ self.fw_space)+'s%-'+str(self.fw_uname+ self.fw_space)+'s%-'+str(self.fw_passw)+'s')%(sel, id_no, v0, v1, v2))
+            print((('%1s%'+str(self.fw_id)+'s %-'+str(self.fw_desc+ self.fw_space)+'s%-'+str(self.fw_uname+ self.fw_space)+'s%-'+str(self.fw_passw)+'s')%(sel, id_no, v0, v1, v2)))
 
             #
             # Split long entries over multiple lines
@@ -1176,7 +1183,7 @@ class UI_Txt:
                 if (v0  == '' and v1 == '' and v2 == ''):
                     break
 
-                print(('      %-'+str(self.fw_desc)+'s%-'+str(self.fw_uname)+'s%-'+str(self.fw_passw)+'s')%(v0,v1,v2))
+                print((('      %-'+str(self.fw_desc)+'s%-'+str(self.fw_uname)+'s%-'+str(self.fw_passw)+'s')%(v0,v1,v2)))
                 i_d += self.fw_desc
                 i_u += self.fw_uname
                 i_p += self.fw_passw
@@ -1184,12 +1191,12 @@ class UI_Txt:
             id_no += 1
         
         if page == self.pages:
-            print('%3d'%(id_no))
+            print(('%3d'%(id_no)))
 
         #
         # Print footer
         #        
-        print('-'*(self.fw_total - len(pagestr))+pagestr)
+        print(('-'*(self.fw_total - len(pagestr))+pagestr))
         print('n: next, p: prev, l: (un)lock, c: change password')
         print('<N><C>: Select item <N> and <C> where d: delete, e: edit, r: reveal')
         print('s<C>: Sort by column <C> where d: descr, u:uname, p:passwd, o:original')        
@@ -1204,7 +1211,7 @@ class UI_Txt:
             self.display_data(pageno)
             self.reset_timeout()
             
-            cmd = raw_input('> ')
+            cmd = input('> ')
             
             if len(cmd) == 0:
                 continue
@@ -1231,7 +1238,7 @@ class UI_Txt:
                 #
                 #
                 if cmd2 == 'd':
-                    verify = raw_input('\rAre you sure you want to delete item %s? yes/[no]'%(cmd[0]))
+                    verify = input('\rAre you sure you want to delete item %s? yes/[no]'%(cmd[0]))
                     if verify == 'yes':
                         self.app.delete_item(item)
                 
@@ -1244,11 +1251,11 @@ class UI_Txt:
 
             if cmd[0] == 'l':
                 if self.app.locked == True:
-                    verify = raw_input('Unlock file? yes/[no]')
+                    verify = input('Unlock file? yes/[no]')
                     if verify == 'yes':
                         self.app.unlock_file()
                 else:
-                    pwd = getpass.getpass("Re-enter password to lock:")
+                    pwd = getpass.getpass("Re-enter password to lock:").encode()
                     
                     if not(self.app.lock_file(pwd)):
                         print('Incorrect password')
@@ -1309,9 +1316,9 @@ class UI_Txt:
             newval = True
             
             
-        desc =  raw_input('Description [%20s]: '%(vals[0]))
-        uname = raw_input('User name  [%20s]: '%(vals[1]))
-        paswd = raw_input('Password   [%20s]: '%(vals[2]))
+        desc =  input('Description [%20s]: '%(vals[0]))
+        uname = input('User name  [%20s]: '%(vals[1]))
+        paswd = input('Password   [%20s]: '%(vals[2]))
         
         if len(desc) == 0 :
             desc = vals[0]
@@ -1338,7 +1345,8 @@ if __name__ == '__main__':
     # Start User Interface application
     # 
     app = UI_Txt(
-        timeout     = DefConfig.TIMEOUT,
+        #timeout     = DefConfig.TIMEOUT,
+        timeout     = None,
         fw_total    = DefConfig.FIELDW_TOTAL,
         fw_id       = DefConfig.FIELDW_ID,
         fw_desc     = DefConfig.FIELDW_DESC,
