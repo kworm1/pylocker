@@ -497,10 +497,7 @@ class CBC:
         #
         enc0 = base64.b64decode(ciphertext)
         enc  = [int(i) for i in enc0]
-        #print ('BLAH', enc0)
-        #enc = [i for i in enc0]
-        #print('BLAHBLAH',enc)
-        
+
         #
         # Decrypt
         #
@@ -983,7 +980,7 @@ class App():
                     endblock += line
                 
         
-        with open('test.txt', 'w') as f: ##BLAH
+        with open(me, 'w') as f:
             f.write(startblock)
             f.write('    BEGIN ENCRYPTED BLOCKS\n')
             
@@ -1345,8 +1342,7 @@ if __name__ == '__main__':
     # Start User Interface application
     # 
     app = UI_Txt(
-        #timeout     = DefConfig.TIMEOUT,
-        timeout     = None,
+        timeout     = DefConfig.TIMEOUT,
         fw_total    = DefConfig.FIELDW_TOTAL,
         fw_id       = DefConfig.FIELDW_ID,
         fw_desc     = DefConfig.FIELDW_DESC,
