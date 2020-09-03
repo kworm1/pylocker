@@ -629,6 +629,21 @@ class App():
         self.sort_idx = sorted(list(range(1, len(sort_vals)+1)), key=lambda k: sort_vals[k - 1])
         
        
+    def search_items(self, searchstr, fuzzy=False):
+        """
+        Search all items (description +  return matching indices
+        """
+
+        all_desc=[]
+        all_uname=[]
+        self.sort('orig')
+        for i in range(1, len(self.data)):
+            val = self.get_vals(i)
+            all_desc.append(val[0].lower())
+            all_uname.append(val[1].lower())
+
+        print('BLAH', all_desc, 'BLAH', all_uname)
+
 
    
             
@@ -894,7 +909,7 @@ class App():
         #
         # Read file
         #
-        with open(me, 'r') as f:
+        with open(me, 'rb') as f:
             curblock = 0;
             
             for line in f:
@@ -903,14 +918,14 @@ class App():
                 #
                 # Look for start of data field
                 #
-                if line.strip().find('BEGIN ENCRYPTED BLOCKS') == 0:
+                if line.strip().find(b'BEGIN ENCRYPTED BLOCKS') == 0:
                     curblock += 1
                     continue
     
                 if curblock == 0:
                     continue
                 
-                if line.strip().find('END ENCRYPTED BLOCKS') == 0:
+                if line.strip().find(b'END ENCRYPTED BLOCKS') == 0:
                     break
                 
     
@@ -919,9 +934,9 @@ class App():
                     #
                     # Start new datablock if numerical identifier is detected
                     #
-                    if (line[0:10]).strip()!='':
+                    if (line[0:10]).strip()!=b'':
                         i = int(line[0:10])
-                        data[i] = ''
+                        data[i] = b''
                     
                     #
                     # Read data block
@@ -1212,7 +1227,7 @@ class UI_Txt:
             
             if len(cmd) == 0:
                 continue
-            
+
             if cmd[0] >= '0' and cmd[0] <= '9':
                 if len(cmd) != 2:
                     continue
@@ -1245,6 +1260,9 @@ class UI_Txt:
                 if cmd2 == 'r':
                     self.display_data(pageno, item)
                     time.sleep(1)
+
+            if cmd[0] == 'f':
+                self.search_items(cmd[1:])
 
             if cmd[0] == 'l':
                 if self.app.locked == True:
@@ -1299,7 +1317,14 @@ class UI_Txt:
                 if cmd[1] == 'o':
                     self.app.sort('orig')
                 
-        
+
+    def search_items(self, searchstr):
+        """
+            Search through items by searching all desctiption and username
+            fields and only displaying resulting items
+        """
+        self.app.search_items(searchstr)
+
     def edit_item(self, itemno):
         """
             Edit or create a new item
@@ -1342,7 +1367,7 @@ if __name__ == '__main__':
     # Start User Interface application
     # 
     app = UI_Txt(
-        timeout     = None,#DefConfig.TIMEOUT,
+        #timeout     = DefConfig.TIMEOUT,
         fw_total    = DefConfig.FIELDW_TOTAL,
         fw_id       = DefConfig.FIELDW_ID,
         fw_desc     = DefConfig.FIELDW_DESC,
@@ -1353,9 +1378,8 @@ if __name__ == '__main__':
 """
     BEGIN ENCRYPTED BLOCKS
     000000 UNLOCKED
-    000001 wXIVtDYdHdEEXjTYgsjTfTqUWTHy0lqrcr4TBxE66GQ=
-    000002 YnqnUDnKQ02yntsli7RptefD9F7QLd0E4Ev3q95+YjM=
-    000003 l/nNDZI4PZNT/vehCJhMMarrR1IrLFBxh7yRP6MGxro=
-    000004 HM6ivaNCgBYYtoE76kOBOk6KUxxMFHrToe7EBhAOVFM=
+    000001 SAREM7g8G4i+wEpWUuhRqbbsnS9PGwEezs1pBrEPk+8=
+    000002 lRbNspQXJpc7M0O7ZOrFNMJoqpTNC1EUIAASd0vK0Sg=
+    000003 YNrmS7+QJjZHd5p4AvwPTW5uOUqVIMdpxT/ZRxOo2Ck=
     END ENCRYPTED BLOCKS
 """
