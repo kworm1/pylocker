@@ -568,6 +568,11 @@ class App():
         #
         self.sort_idx = list(range(1, len(self.data)))
 
+        #
+        # applied filters (for reference only)
+        #
+        self.filters = []
+
     def get_vals(self, itemno):
         assert(itemno > 0)
 
@@ -602,6 +607,11 @@ class App():
         
         assert (col in ['desc', 'uname', 'pwd', 'orig'])
 
+        #
+        # clear all filters
+        #
+        self.filters = []
+
 
         sort_vals = []        
    
@@ -633,16 +643,24 @@ class App():
         """
         Search all items (description +  return matching indices
         """
+        searchstr = searchstr.strip().lower()
 
         all_desc=[]
         all_uname=[]
-        self.sort('orig')
-        for i in range(1, len(self.data)):
-            val = self.get_vals(i)
+        # self.sort('orig')
+        for i in range(len(self.sort_idx)):
+            val = self.get_vals(i+1)
             all_desc.append(val[0].lower())
             all_uname.append(val[1].lower())
+            all_uname.append(val[1].lower())
 
-        print('BLAH', all_desc, 'BLAH', all_uname)
+
+        match_desc = [searchstr in s.strip().lower() for s in all_desc]
+        match_uname = [searchstr in s.strip().lower() for s in all_uname]
+        matches = [a | b for a,b in zip(match_desc, match_uname)]
+        self.sort_idx = [v for i,v in enumerate(self.sort_idx) if matches[i]]
+
+        self.filters += [searchstr]
 
 
    
@@ -1126,6 +1144,9 @@ class UI_Txt:
         # Print header
         #
         self.clear()
+        if len(self.app.filters) != 0:
+            print('Filtering by "' + '" AND "'.join(self.app.filters) + '"')
+            print('(resort to clear filters)')
         print(( ('%'+str(self.fw_id)+'s %-'+str(self.fw_desc + self.fw_space)+'s%-'+str(self.fw_uname + self.fw_space)+'s%-'+str(self.fw_passw)+'s')%('ID', 'Description', 'Username', 'Password')))
 
         lockstr = ' - UNLOCKED' if not self.app.locked else ' - locked'
@@ -1211,7 +1232,8 @@ class UI_Txt:
         print(('-'*(self.fw_total - len(pagestr))+pagestr))
         print('n: next, p: prev, l: (un)lock, c: change password')
         print('<N><C>: Select item <N> and <C> where d: delete, e: edit, r: reveal')
-        print('s<C>: Sort by column <C> where d: descr, u:uname, p:passwd, o:original')        
+        print('s<C>: Sort by column <C> where d: descr, u:uname, p:passwd, o:original')
+        print('f<S>: Find (search) for a search term <S>.  x: clear search')
             
         
     def input_loop(self):
@@ -1381,5 +1403,8 @@ if __name__ == '__main__':
     000001 SAREM7g8G4i+wEpWUuhRqbbsnS9PGwEezs1pBrEPk+8=
     000002 lRbNspQXJpc7M0O7ZOrFNMJoqpTNC1EUIAASd0vK0Sg=
     000003 YNrmS7+QJjZHd5p4AvwPTW5uOUqVIMdpxT/ZRxOo2Ck=
+    000004 ETFEprA2n0N/qgumdBgGX0FYol0FpnIuPUXDFQbPoTk=
+    000005 2eDCRr8ANSpXw9oNFfU7/ZrFPtDhRztH8WmXPQ+mZ2dQK611wTk8CWUW7ccrJ1IK
+    000006 anVYhLAkk7DZXSmRjyq9niEzboFUWAA3TgEfbViy7XOMG0L4WtZqGN72jYGchQ2n
     END ENCRYPTED BLOCKS
 """
