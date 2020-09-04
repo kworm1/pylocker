@@ -657,9 +657,17 @@ class App():
         match_desc = [searchstr in s.strip().lower() for s in all_desc]
         match_uname = [searchstr in s.strip().lower() for s in all_uname]
         matches = [a | b for a,b in zip(match_desc, match_uname)]
-        self.sort_idx = [v for i,v in enumerate(self.sort_idx) if matches[i]]
 
-        self.filters += [searchstr]
+        sort_idx = [v for i,v in enumerate(self.sort_idx) if matches[i]]
+
+        if len(sort_idx) > 0:
+            self.sort_idx = sort_idx
+            self.filters += [searchstr]
+        else:
+            return False
+
+
+        return True
 
 
    
@@ -1091,6 +1099,10 @@ class UI_Txt:
         self.fw_passw = fw_passw
         self.fw_space = fw_space
 
+        #
+        # Variable to hold error messages to display
+        #
+        self.errormsg = ''
 
         #
         # Get the password from user. The 128 bit password is computed
@@ -1143,15 +1155,18 @@ class UI_Txt:
         # Print header
         #
         self.clear()
+        if self.errormsg != '':
+            print('** {} **'.format(self.errormsg))
+
         if len(self.app.filters) != 0:
             print('Filtering by "' + '" AND "'.join(self.app.filters) + '"')
-            print('(resort to clear filters)')
+            print('To clear filters: re-sort')
         print(( ('%'+str(self.fw_id)+'s %-'+str(self.fw_desc + self.fw_space)+'s%-'+str(self.fw_uname + self.fw_space)+'s%-'+str(self.fw_passw)+'s')%('ID', 'Description', 'Username', 'Password')))
 
         lockstr = ' - UNLOCKED' if not self.app.locked else ' - locked'
         
         print(('-'*self.fw_total))
-        
+
         pagestr = ' page %d / %d'%(page, self.pages) + lockstr
         id_no = 0
         for k in range(1, len(self.app.sort_idx)+1): #,v in self.app.data.items():
@@ -1159,19 +1174,19 @@ class UI_Txt:
             # Description, Username and Password should be three tab separated
             # fields. Decrypt, split them, and pad with empty fields if anythin is missing
             #
-        
+
             #
             # k = 0 is the special case of the hash, ignore it.
             #
-            if k == 0: 
+            if k == 0:
                 continue
-            
+
             #
             # Skip all items not in the current page
             #
             if ((k - 1)//10 + 1 ) != page:
                 continue
- 
+
             vals = self.app.get_vals(k)
 
             while (len(vals) < 3):
@@ -1180,31 +1195,31 @@ class UI_Txt:
             #
             # Ensure that password is only displayed if asked to be revealed
             # otherwise display stars
-            #                
+            #
             if k == selected:
                 sel = '*'
             else:
                 sel = ' '
                 vals[2] = '*'*8
-                
-                
+
+
             #
             # Identify non-printable entries, and change them to a special
             # symbol
             #
             for i in range(0,3):
                 vals[i] = ''.join([vals[i][k] if vals[i][k] in self.PRINTABLE else self.UNPRINTABLE for k in range(0, len(vals[i])) ])
-            
-                
+
+
             v0 = vals[0][0:self.fw_desc]
             v1 = vals[1][0:self.fw_uname]
             v2 = vals[2][0:self.fw_passw]
-            
+
             print((('%1s%'+str(self.fw_id)+'s %-'+str(self.fw_desc+ self.fw_space)+'s%-'+str(self.fw_uname+ self.fw_space)+'s%-'+str(self.fw_passw)+'s')%(sel, id_no, v0, v1, v2)))
 
             #
             # Split long entries over multiple lines
-            #            
+            #
             i_d = self.fw_desc
             i_u = self.fw_uname
             i_p = self.fw_passw
@@ -1219,15 +1234,15 @@ class UI_Txt:
                 i_d += self.fw_desc
                 i_u += self.fw_uname
                 i_p += self.fw_passw
-            
+
             id_no += 1
-        
+
         if page == self.pages:
             print(('%3d'%(id_no)))
 
         #
         # Print footer
-        #        
+        #
         print(('-'*(self.fw_total - len(pagestr))+pagestr))
         print('n: next, p: prev, e: end, b:beginning, l: (un)lock, c: change password')
         print('<N><C>: Select item <N> and <C> where d: delete, e: edit, r: reveal')
@@ -1242,6 +1257,7 @@ class UI_Txt:
             self.pages = (len(self.app.sort_idx) - 1)//10 + 1
             assert(self.pages > 0)
             self.display_data(pageno)
+            self.errormsg = ''
             self.reset_timeout()
             
             cmd = input('> ')
@@ -1283,7 +1299,11 @@ class UI_Txt:
                             continue
 
             if cmd[0] == 'f':
-                self.search_items(cmd[1:])
+                if not self.app.search_items(cmd[1:]):
+                    self.errormsg = "no results"
+                else:
+                    pageno=1
+
                 continue
 
             if cmd[0] == 'l':
@@ -1337,37 +1357,36 @@ class UI_Txt:
                 continue
                 
             if cmd[0] == 's':
-                if len(cmd) != 2:
-                    continue     
-                
-                if cmd[1] == 'd':
-                    self.app.sort('desc')
-                    continue
-                
-                if cmd[1] == 'u':
-                    self.app.sort('uname')
-                    continue
-                    
-                if cmd[1] == 'p':
-                    self.app.sort('pwd')
-                    continue
-                    
-                if cmd[1] == 'o':
-                    self.app.sort('orig')
-                    continue
+                if len(cmd) == 2:
+                    if cmd[1] == 'd':
+                        self.app.sort('desc')
+                        continue
+
+                    if cmd[1] == 'u':
+                        self.app.sort('uname')
+                        continue
+
+                    if cmd[1] == 'p':
+                        self.app.sort('pwd')
+                        continue
+
+                    if cmd[1] == 'o':
+                        self.app.sort('orig')
+                        continue
 
             #
             # This code should only be reachable in case of an incorrect command
             #
-            print('Can not understand command "{}"'.format(cmd))
+            self.errormsg = 'Can not understand command "{}"'.format(cmd)
                 
 
-    def search_items(self, searchstr):
-        """
-            Search through items by searching all desctiption and username
-            fields and only displaying resulting items
-        """
-        self.app.search_items(searchstr)
+    # def search_items(self, searchstr):
+    #     """
+    #         Search through items by searching all desctiption and username
+    #         fields and only displaying resulting items
+    #     """
+    #     if not self.app.search_items(searchstr):
+    #         self.errormsg = 'no results'
 
     def edit_item(self, itemno):
         """
@@ -1422,26 +1441,57 @@ if __name__ == '__main__':
 """
     BEGIN ENCRYPTED BLOCKS
     000000 UNLOCKED
-    000001 v8Y4Ka+Q6f9/GFyj7OHD1ZbZzRTZ5iLjZDjTIbChT34=
-    000002 KjRe6ubGR92oauWaSlhayRVmOWXifjW18L0H92eJjC4=
-    000003 rdGYd1PGUJrM5KcjA2rfKMF8b2VBB1MKi/wcIebM9Ro=
-    000004 h5XT1KGIIkTvMGz2AugSH8fjTNKomnwqCl7Yq5PHy70=
-    000005 39JSXtm/w57tC4JCVUbzvnSPsn2IgQ1oyv1QFdo3gsFxWYqlYyw/Kbj4WYQ3zZSZ
-    000006 Q5nL7uoWyRWXaSApJROsDHkvlakRFxoO39kmwQ4dpZRLaydZT5Sr45MV3oeUYWp+
-    000007 0Mkg9qq4+SQy016whduwUNGRpbgmcRWBL9el4Y6ea/8=
-    000008 EVG73nOo5bbC5Rz6ldazeL6Mjj9Umxek5+XcxHzAgps=
-    000009 Ygx19z5DaUu7gq1sDh1FASsfasvhXi9yJdbdPJbA+Io=
-    000010 mrGyWoSd299zTYiNip4kcbARpR5MglwJ5VDkCnU42lsOmxXbINW0Zi/XmRY05DN8
-    000011 frFepjIqBitj8d51bLpVNfblTUIdsGv8rbiGFKS8aQQ=
-    000012 SoEYlgYv4DctYrn9MP+MedTm0rsQq+bCeAJ8jRfaSHI=
-    000013 1yVcc5fcae8Gy+I4Rp6bxNf910+9flClPdonxktvjAI=
-    000014 Gky58ZPcGIx+lKRtpYgbrdE9nRSp0wRn6mkwg/2a+H8=
-    000015 61nLyUA44j/BZFz0ZsjimbNOu4R7S6St5LWHF8qk+RI=
-    000016 aGzFV22AxLcoGnlhJrI2QesuGlZFj5vKX0LsFls2Hftzii5Ggki1ISPbdlF9U9wt
-    000017 Q+GNgYc8qqYsuztuYYjva1CeZlPHbMUSuxUSQZ7gR38=
-    000018 Yw2nTTiR1DStm16pLp+9vRnzsKE4Vec076Fn/a9ObbA=
-    000019 DicOW8+wdZgGrOOfJTyLU1oXT6RXk4LjOG6Evw/o9RU=
-    000020 BZhb1KJi3+Tp9Nb/mqYmdcPm8BW3Qt9Drt/9XKm0Ou8=
-    000021 ZK+h5COMUpSeJApKUnj7s8OqAkoOe/RyF8tAnWQwpv0=
+    000001 qCSLu70tt8eBcLb37ujj+NluxiLu8dXwOAiLqsw6UmoU5H647S4Egp/PiuxhnRr/
+    000002 nRlnNVD8VjNjVDkKbnkdtMKw4WXg3rjnRroZ4/e3iTwykEZt8HMKcM7yG2b789Kbv
+           GcLmvlGK6Mr+VV47r3UbQ==
+    000003 9vb3UO8OLPELCkiCmLWY1QJOKJpG+EqrY0Yuw63lZviIot0tEF+qvlmcDtF70mXs
+    000004 xVoC5NGlW5uxmj+Jco5zKg4a3h7UQXesp7cRa4oYivOkEacclOjzO13nmyJetMvq
+    000005 UHHwQ9fCpHb8WQ47kL3IKEeurevNNUYolgEjmSi4RZRW29R51ybM9Lln9X/dj20S6
+           tF/B6Ym0jFaKZ/7B4nJLA==
+    000006 PhQcxvbGyzWftBGuvxJYxo1vQt2w1pTVfP/zAhGKlOLQrU7/sY1B21p17M/fI4rz
+    000007 2QCwirFcsg6XnNsmBhAiUgZaCl0favVLQi1E4kRJOOL2hivD68l66FMwl7BCEJqd
+    000008 hIJhL2loXJlJ/ihqHHzTo8yWoBYLltjjWOT88yIu+RhHcN1PzTBI8A9VG73dE88zj
+           GDKC7NRhQUbHeUbqzPsswIpJkux0205+XVFrpjhKCU=
+    000009 fp0AgZFh+h/7iHG/lk+V7Tbiq/9R2JqipSRJLQ1iIUwqzDDU+xcHJCaHFwwt0ZIbc
+           KX46tG7k4sT4Sqcl5Gxuw==
+    000010 ggMx2N2CvzwYwuBhY5V7iarQhbpQSm4kEgV6DsJepxgFImXWz2P+9MiiEi6NSU6J6
+           jXMwBvSD0I/dqDbX9x7Qk07z5QjcziYqvo2sOAlp08=
+    000011 GZfcjKtRKUmxpoLhyBLuzPub9YaxI/YSmrcBQ04mLiwR/gimb4x1Q3nyqsxpVmQq
+    000012 HqLVWlzmgHwqBGuQj+aUsqvNdH/4jBrjjbfXlNUsgPbgYaJPD/qwZhQf4wlbRJozK
+           gLa123d/8AIdxKW7AcCeg==
+    000013 DhGx8LVFQ6Z8BOakqVGQJpoBkRNJQ7uJQtIQlOqUyBWesEYSOqAg7uTtete3eLWt
+    000014 vie1T7/i6+y4gE12yrjxlBtiQPB3ZgX2Rv13yRknyWQ4qoYyDG0mEdibopztEZ5ZC
+           6n/JORZwT7mEyYldczCpA==
+    000015 Wj4KYqAJHvwOYA9SqMdeNVFy/HHwgVnIF+31Lext5pwqLNepd6wFYdLjomWDV1iv
+    000016 gTHJ9Jm9yT0cO349gI4RfVPpb4hoh14AJMmJQtPQ/SR6u3vUGIzTg/We/lflOGwl
+    000017 s/mPf0lA4Zi38ldOZOE9OHWr+PHEQtRR1aR/SkazQ+OFXIu/HGlBkWNpjZR9rIu3
+    000018 2w3HTOGyt25+wgw8Mx8m7aJkXFJK1dTWmJBhu9ZO/5WvEThQCOwkOsD3xk0A9IWe0
+           FSBA2oExCDTawnGe1DQbg==
+    000019 4LtTBHgRLxthHbS7HSgvYaF6ubSTYxxPvRpE2euGAAbDus7KmWNEYER+1o4bMor/9
+           w5OyCSo7KnkpEp1LKIlsw==
+    000020 rsfE2ojgXOckou85QHgExgOxUBHWKH1klCn9VxaRGulJ8aoj69TbDcuMU5FlgRnLs
+           T5Tbqf097Vlqi4KQ0JTDQ==
+    000021 R0ZeDHxjRPuUvg19gYd191HxgdPe2dzMX4NUS4ItMbDe2eBicsfZUT7NUQqi2+YP0
+           ZcC5F6+/15Uxraai69kIA==
+    000022 aH65Hz4xmMBfxkJlLVTyNd/93W48tI+iIEfbc3xQeBBctQROg4Bxp2hiN6FBtHNbF
+           6F1d40PNVpoU5LMBxuuNA==
+    000023 hVqFUb0GYXA58Hq42MPptvAF32nDavDbcWgqF8GR0SmJHoisfk1NzQDBw4lUkHT7
+    000024 df9U/lJMAkBwQZuwzNK8eIpo9h6kDkCb503+/ggbC7d8wF35hNw4GA//g5kEG9ZfZ
+           oz8uQ614XKknexQCIothPaEw/mdGGz68p60GwRq9fA=
+    000025 +c0bFv9HIgqKEuAouGobWdOcaAe88KDzV9fdMijXqmMwRfeyk1+Dtn4jGnFBqncaa
+           oKtpPzYlTEnVkZZQhoDlg==
+    000026 FVAd9edZD+Dcbl35lLCrLf5JiZONWdcWDqu3VsgRYegJ1lQGiv4VjwwOTc655xgkB
+           MMNdfQHllepBkmKuwhuJg==
+    000027 imrUS8vT6L1bExPBh/RAAqzANWcTilSQ9n3E4QEoeHknCza+Wjg2i0vWw8OID+5C5
+           zJ7XQXem39pWDzoQiM2uA==
+    000028 cG0pbTU57zosafcalmKnQs/czInRE2QCUiHWTlWwMLf9Z6/QEFWlyJcZraW65Vb50
+           qWovJ9K+Bmd71AWOm8WKHGtZfuF25HdiTn/HvnLjok=
+    000029 R848EoAqW7aV28q54HdAGZac93H+Wrjo9sgguDZEZKQwAuIHz/mXXmRXptcqPtVMf
+           GHeg8Q8JHVBzNr1FYpawrktye0071LfBaqzocnYXW0=
+    000030 hlLIXD03O9zTvkxDn1hhHDM8O+VqOqe8xR4XAMECN6q743a1e/mpcUhy1tRex4eUb
+           9nwvUS12IGgCyFF8BsNYVquX0phBYN3CGfZjttBE/uRRX7th+Cbcg5DU/MX3/Qy
+    000031 A2NZhMKNVcBThm/U6cIyaQVhOdzdB3JPo+mAgAgAPN3ZeBs4XqJ6IHqeTMe2t3nmH
+           ggEk6xHRUxsGYBNDCgUW2746haKWbF44ZzneOM66ps=
+    000032 1LIPc97PGPTRg3cKQMb7Rf66evQweUmQDd7E2v/y+4ofm+syz3tClKwRiglHKOdT
     END ENCRYPTED BLOCKS
 """
