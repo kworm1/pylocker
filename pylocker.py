@@ -652,7 +652,6 @@ class App():
             val = self.get_vals(i+1)
             all_desc.append(val[0].lower())
             all_uname.append(val[1].lower())
-            all_uname.append(val[1].lower())
 
 
         match_desc = [searchstr in s.strip().lower() for s in all_desc]
@@ -1230,17 +1229,17 @@ class UI_Txt:
         # Print footer
         #        
         print(('-'*(self.fw_total - len(pagestr))+pagestr))
-        print('n: next, p: prev, l: (un)lock, c: change password')
+        print('n: next, p: prev, e: end, b:beginning, l: (un)lock, c: change password')
         print('<N><C>: Select item <N> and <C> where d: delete, e: edit, r: reveal')
         print('s<C>: Sort by column <C> where d: descr, u:uname, p:passwd, o:original')
-        print('f<S>: Find (search) for a search term <S>.  x: clear search')
+        print('f<S>: Find (search) for a search term <S>.')
             
         
     def input_loop(self):
         
         pageno = 1
         while (True):
-            self.pages = (len(self.app.data) - 1)//10 + 1
+            self.pages = (len(self.app.sort_idx) - 1)//10 + 1
             assert(self.pages > 0)
             self.display_data(pageno)
             self.reset_timeout()
@@ -1251,40 +1250,41 @@ class UI_Txt:
                 continue
 
             if cmd[0] >= '0' and cmd[0] <= '9':
-                if len(cmd) != 2:
-                    continue
+                if len(cmd) == 2:
 
-                item = (int(cmd[0])) + (pageno-1)*10 + 1
-                                           
-                if item > (len(self.app.data)):
-                    continue
-                
-                cmd2 = cmd[1]
-                
-                # 
-                # Edit an item
-                #
-                if cmd2 == 'e':
-                    self.edit_item(item)
-                
-                #
-                # Delete an item
-                #
-                #
-                if cmd2 == 'd':
-                    verify = input('\rAre you sure you want to delete item %s? yes/[no]'%(cmd[0]))
-                    if verify == 'yes':
-                        self.app.delete_item(item)
-                
-                #
-                # Reveal password for an item
-                #
-                if cmd2 == 'r':
-                    self.display_data(pageno, item)
-                    time.sleep(1)
+                    item = (int(cmd[0])) + (pageno-1)*10 + 1
+
+                    if item <= (len(self.app.data)):
+                        cmd2 = cmd[1]
+
+                        #
+                        # Edit an item
+                        #
+                        if cmd2 == 'e':
+                            self.edit_item(item)
+                            continue
+
+                        #
+                        # Delete an item
+                        #
+                        #
+                        if cmd2 == 'd':
+                            verify = input('\rAre you sure you want to delete item %s? yes/[no]'%(cmd[0]))
+                            if verify == 'yes':
+                                self.app.delete_item(item)
+                            continue
+
+                        #
+                        # Reveal password for an item
+                        #
+                        if cmd2 == 'r':
+                            self.display_data(pageno, item)
+                            time.sleep(1)
+                            continue
 
             if cmd[0] == 'f':
                 self.search_items(cmd[1:])
+                continue
 
             if cmd[0] == 'l':
                 if self.app.locked == True:
@@ -1303,13 +1303,25 @@ class UI_Txt:
                     #
                     pwd = 'X'*len(pwd)
 
+                continue
+
             if cmd[0] == 'n':
                 if pageno < self.pages:
                     pageno += 1
-            
+                continue
+
+            if cmd[0] == 'e':
+                pageno = self.pages
+                continue
+
+            if cmd[0] == 'b':
+                pageno = 1
+                continue
+
             if cmd[0] == 'p':
                 if pageno > 1:
                     pageno -= 1
+                continue
             
             if cmd[0] == 'q':
                 self.clear()
@@ -1322,6 +1334,7 @@ class UI_Txt:
                     self.app.change_password(pwd)
                 pwd = 'X' *len(pwd)
                 pwd0 = 'X' * len(pwd0)
+                continue
                 
             if cmd[0] == 's':
                 if len(cmd) != 2:
@@ -1329,15 +1342,24 @@ class UI_Txt:
                 
                 if cmd[1] == 'd':
                     self.app.sort('desc')
+                    continue
                 
                 if cmd[1] == 'u':
                     self.app.sort('uname')
+                    continue
                     
                 if cmd[1] == 'p':
                     self.app.sort('pwd')
+                    continue
                     
                 if cmd[1] == 'o':
                     self.app.sort('orig')
+                    continue
+
+            #
+            # This code should only be reachable in case of an incorrect command
+            #
+            print('Can not understand command "{}"'.format(cmd))
                 
 
     def search_items(self, searchstr):
@@ -1400,11 +1422,26 @@ if __name__ == '__main__':
 """
     BEGIN ENCRYPTED BLOCKS
     000000 UNLOCKED
-    000001 SAREM7g8G4i+wEpWUuhRqbbsnS9PGwEezs1pBrEPk+8=
-    000002 lRbNspQXJpc7M0O7ZOrFNMJoqpTNC1EUIAASd0vK0Sg=
-    000003 YNrmS7+QJjZHd5p4AvwPTW5uOUqVIMdpxT/ZRxOo2Ck=
-    000004 ETFEprA2n0N/qgumdBgGX0FYol0FpnIuPUXDFQbPoTk=
-    000005 2eDCRr8ANSpXw9oNFfU7/ZrFPtDhRztH8WmXPQ+mZ2dQK611wTk8CWUW7ccrJ1IK
-    000006 anVYhLAkk7DZXSmRjyq9niEzboFUWAA3TgEfbViy7XOMG0L4WtZqGN72jYGchQ2n
+    000001 v8Y4Ka+Q6f9/GFyj7OHD1ZbZzRTZ5iLjZDjTIbChT34=
+    000002 KjRe6ubGR92oauWaSlhayRVmOWXifjW18L0H92eJjC4=
+    000003 rdGYd1PGUJrM5KcjA2rfKMF8b2VBB1MKi/wcIebM9Ro=
+    000004 h5XT1KGIIkTvMGz2AugSH8fjTNKomnwqCl7Yq5PHy70=
+    000005 39JSXtm/w57tC4JCVUbzvnSPsn2IgQ1oyv1QFdo3gsFxWYqlYyw/Kbj4WYQ3zZSZ
+    000006 Q5nL7uoWyRWXaSApJROsDHkvlakRFxoO39kmwQ4dpZRLaydZT5Sr45MV3oeUYWp+
+    000007 0Mkg9qq4+SQy016whduwUNGRpbgmcRWBL9el4Y6ea/8=
+    000008 EVG73nOo5bbC5Rz6ldazeL6Mjj9Umxek5+XcxHzAgps=
+    000009 Ygx19z5DaUu7gq1sDh1FASsfasvhXi9yJdbdPJbA+Io=
+    000010 mrGyWoSd299zTYiNip4kcbARpR5MglwJ5VDkCnU42lsOmxXbINW0Zi/XmRY05DN8
+    000011 frFepjIqBitj8d51bLpVNfblTUIdsGv8rbiGFKS8aQQ=
+    000012 SoEYlgYv4DctYrn9MP+MedTm0rsQq+bCeAJ8jRfaSHI=
+    000013 1yVcc5fcae8Gy+I4Rp6bxNf910+9flClPdonxktvjAI=
+    000014 Gky58ZPcGIx+lKRtpYgbrdE9nRSp0wRn6mkwg/2a+H8=
+    000015 61nLyUA44j/BZFz0ZsjimbNOu4R7S6St5LWHF8qk+RI=
+    000016 aGzFV22AxLcoGnlhJrI2QesuGlZFj5vKX0LsFls2Hftzii5Ggki1ISPbdlF9U9wt
+    000017 Q+GNgYc8qqYsuztuYYjva1CeZlPHbMUSuxUSQZ7gR38=
+    000018 Yw2nTTiR1DStm16pLp+9vRnzsKE4Vec076Fn/a9ObbA=
+    000019 DicOW8+wdZgGrOOfJTyLU1oXT6RXk4LjOG6Evw/o9RU=
+    000020 BZhb1KJi3+Tp9Nb/mqYmdcPm8BW3Qt9Drt/9XKm0Ou8=
+    000021 ZK+h5COMUpSeJApKUnj7s8OqAkoOe/RyF8tAnWQwpv0=
     END ENCRYPTED BLOCKS
 """
