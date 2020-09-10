@@ -1430,7 +1430,7 @@ if __name__ == '__main__':
     # Start User Interface application
     # 
     app = UI_Txt(
-        #timeout     = DefConfig.TIMEOUT,
+        timeout     = DefConfig.TIMEOUT,
         fw_total    = DefConfig.FIELDW_TOTAL,
         fw_id       = DefConfig.FIELDW_ID,
         fw_desc     = DefConfig.FIELDW_DESC,
