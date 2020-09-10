@@ -1255,7 +1255,7 @@ class UI_Txt:
         pageno = 1
         while (True):
             self.pages = (len(self.app.sort_idx) - 1)//10 + 1
-            assert(self.pages > 0)
+            #assert(self.pages > 0)
             self.display_data(pageno)
             self.errormsg = ''
             self.reset_timeout()
@@ -1270,7 +1270,7 @@ class UI_Txt:
 
                     item = (int(cmd[0])) + (pageno-1)*10 + 1
 
-                    if item <= (len(self.app.data)):
+                    if item > 0 and item <= (len(self.app.sort_idx)+1):
                         cmd2 = cmd[1]
 
                         #
@@ -1284,7 +1284,7 @@ class UI_Txt:
                         # Delete an item
                         #
                         #
-                        if cmd2 == 'd':
+                        if cmd2 == 'd' and item <= (len(self.app.sort_idx)):
                             verify = input('\rAre you sure you want to delete item %s? yes/[no]'%(cmd[0]))
                             if verify == 'yes':
                                 self.app.delete_item(item)
@@ -1293,7 +1293,7 @@ class UI_Txt:
                         #
                         # Reveal password for an item
                         #
-                        if cmd2 == 'r':
+                        if cmd2 == 'r' and item <= (len(self.app.sort_idx)):
                             self.display_data(pageno, item)
                             time.sleep(1)
                             continue
